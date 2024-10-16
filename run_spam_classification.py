@@ -6,41 +6,43 @@ from src.models.train_model import *
 from src.models.evaluate_model import *
 from src.visualization.visualize import *
 
+
 def run_project():
     """
     The main function to execute the complete spam classification workflow:
 
     Parameters:
         None
-    
+
     Returns:
         None
     """
     # Create necessary directories if they don't exist
-    os.makedirs('data/processed_data', exist_ok=True)
-    os.makedirs('models', exist_ok=True)
+    os.makedirs("data/processed_data", exist_ok=True)
+    os.makedirs("models", exist_ok=True)
 
     print("Loading dataset...")
-    data_loader = DataLoader(filepath='data/raw_data/SMSSpamCollection')
+    data_loader = DataLoader(filepath="data/raw_data/SMSSpamCollection")
     raw_data = data_loader.load_data()
 
     print("Preprocessing data...")
     preprocessor = Preprocessor()
     processed_data = preprocessor.preprocess_dataframe(raw_data)
 
-    processed_data.to_csv('data/processed_data/processed_sms_data.csv', index=False)
+    processed_data.to_csv("data/processed_data/processed_sms_data.csv", index=False)
     print("Processed data saved to 'data/processed/processed_sms_data.csv'.")
 
     print("Training model with pipeline...")
     trainer = ModelTrainer()
     trainer.train(raw_data)
 
-    trainer.save_model(filepath='models/spam_classifier_pipeline.pkl')
+    trainer.save_model(filepath="models/spam_classifier_pipeline.pkl")
     print("Trained model (pipeline) saved to 'models/spam_classifier_pipeline.pkl'.")
 
     print("Evaluating model...")
     evaluator = ModelEvaluator(trainer.model, trainer.X_test, trainer.y_test)
     evaluator.evaluate()
+
 
 def load_model(model_path: object) -> object:
     """
@@ -54,37 +56,6 @@ def load_model(model_path: object) -> object:
     """
     return joblib.load(model_path)
 
-def test_saved_model():
-    """
-    Load the saved model and test it on a sample message.
-    
-    Parameters:
-        None
-    
-    Returns:
-        None
-    """
-    # Path to the saved model
-    model_path = 'models/spam_classifier_pipeline.pkl'
-
-    # Load the saved model
-    print("Loading the saved model...")
-    model = load_model(model_path)
-
-    # Example test message
-    test_message = "Hurry! You have won a free iphone. Quickly claim your prize"
-
-    # Make a prediction
-    result = model.predict([test_message])
-
-    # Interpret the prediction
-    if result[0] == 1:
-        print("The email is classified as SPAM.")
-    else:
-        print("The email is classified as HAM.")
-
 
 if __name__ == "__main__":
     run_project()
-    #test_saved_model()
-    
