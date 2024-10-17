@@ -38,7 +38,7 @@ def test_model():
     model = load_model(model_path)
 
     # Example message for prediction
-    test_message = "Congratulations! You've won a free iPhone. Claim now."
+    test_message = "Congratulations! You've won a free iPhone. Quickly Claim now."
 
     # Make a prediction
     result = predict_spam(model, test_message)

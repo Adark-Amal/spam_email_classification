@@ -56,7 +56,6 @@ log/
 *.onnx
 
 # Ignore data
-data/processed_data/
 data/interim/
 
 # Environment variables / secrets
@@ -89,4 +88,5 @@ mlruns/
 
 # MLflow artifacts
 artifacts/
+.zen
 

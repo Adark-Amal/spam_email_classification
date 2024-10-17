@@ -1,6 +1,6 @@
 import pytest
 from src.data.load_data import DataLoader
-from src.models.train_model import ModelTrainer
+from models.model_training import ModelTrainer
 from sklearn.metrics import accuracy_score
 
 
