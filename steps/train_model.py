@@ -8,7 +8,9 @@ import mlflow
 
 
 @step
-def train_model(X_train: pd.Series, y_train: pd.Series, file_path: str) -> Union[BaseEstimator, None]:
+def train_model(
+    X_train: pd.Series, y_train: pd.Series, file_path: str
+) -> Union[BaseEstimator, None]:
     """
     Runs the model training pipeline using the provided training data.
 
@@ -20,7 +22,7 @@ def train_model(X_train: pd.Series, y_train: pd.Series, file_path: str) -> Union
     Returns:
         Union[BaseEstimator, None]: The trained model if successful, otherwise returns None.
     """
-    
+
     try:
         # Log the final model with the signature and input example
         with mlflow.start_run(run_name="Train Model"):

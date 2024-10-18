@@ -9,7 +9,13 @@ from sklearn.metrics import (
 )
 import matplotlib.pyplot as plt
 from sklearn.base import BaseEstimator
-from yellowbrick.classifier import ClassificationReport, ConfusionMatrix, ROCAUC, PrecisionRecallCurve, ClassPredictionError
+from yellowbrick.classifier import (
+    ClassificationReport,
+    ConfusionMatrix,
+    ROCAUC,
+    PrecisionRecallCurve,
+    ClassPredictionError,
+)
 from yellowbrick.model_selection import LearningCurve
 import pandas as pd
 from typing import List
@@ -17,12 +23,14 @@ from typing import List
 
 class ModelEvaluator:
 
-    def evaluate(self, model: BaseEstimator, 
-        X_train: pd.Series, 
-        y_train: pd.Series, 
-        X_test: pd.Series, 
-        y_test: pd.Series, 
-        labels: List[str] = ["ham", "spam"]
+    def evaluate(
+        self,
+        model: BaseEstimator,
+        X_train: pd.Series,
+        y_train: pd.Series,
+        X_test: pd.Series,
+        y_test: pd.Series,
+        labels: List[str] = ["ham", "spam"],
     ) -> None:
         """
         Evaluates the trained model on test data, generates visualizations, and logs metrics and artifacts using MLflow.
@@ -38,7 +46,7 @@ class ModelEvaluator:
         Returns:
             None
         """
-        
+
         # Make predictions on the test data
         y_pred = model.predict(X_test)
 
@@ -50,7 +58,9 @@ class ModelEvaluator:
 
         # Print the classification report
         print(f"Accuracy: {accuracy}")
-        print(f"Classification Report:\n{classification_report(y_test, y_pred, target_names=labels)}")
+        print(
+            f"Classification Report:\n{classification_report(y_test, y_pred, target_names=labels)}"
+        )
 
         # Log evaluation metrics
         with mlflow.start_run(nested=True, run_name="Evaluate Model"):
@@ -68,9 +78,11 @@ class ModelEvaluator:
                 ClassificationReport(model, classes=labels, ax=axes[0, 0]),
                 ConfusionMatrix(model, classes=labels, ax=axes[0, 1]),
                 ROCAUC(model, classes=labels, ax=axes[0, 2]),
-                PrecisionRecallCurve(model, classes=labels, per_class=False, cmap="Set1", ax=axes[1, 0]),
+                PrecisionRecallCurve(
+                    model, classes=labels, per_class=False, cmap="Set1", ax=axes[1, 0]
+                ),
                 ClassPredictionError(model, classes=labels, ax=axes[1, 1]),
-                LearningCurve(model, scoring='f1_weighted', ax=axes[1, 2])
+                LearningCurve(model, scoring="f1_weighted", ax=axes[1, 2]),
             ]
 
             # Fit and score each visualizer
@@ -83,4 +95,6 @@ class ModelEvaluator:
             plt.savefig("model_evaluation_report.png")
             mlflow.log_artifact("model_evaluation_report.png")
 
-            print("Model evaluation complete. Metrics and visualizations logged to MLflow.")
+            print(
+                "Model evaluation complete. Metrics and visualizations logged to MLflow."
+            )

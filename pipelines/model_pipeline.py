@@ -9,6 +9,7 @@ import mlflow
 # Set the experiment name
 mlflow.set_experiment("Spam Classifier")
 
+
 @pipeline(name="Spam Classifier", enable_cache=False)
 def model_pipeline(data_path: str):
     """
@@ -22,7 +23,7 @@ def model_pipeline(data_path: str):
     """
     model_filepath: str = "models/spam_classifier_pipeline.pkl"
     data_filepath: str = "data/processed_data/processed_sms_data.csv"
-    
+
     try:
         # Load data
         message_data = load_data(data_path)
@@ -32,10 +33,8 @@ def model_pipeline(data_path: str):
 
         # Train and save model
         model = train_model(X_train, y_train, model_filepath)
-            
+
         # Evaluate Model
         evaluate_model(model, X_train, y_train, X_test, y_test)
     except Exception as e:
         logging.error(f"An error occurred in the model pipeline: {e}")
-
-

@@ -16,10 +16,12 @@ from sklearn.base import BaseEstimator
 
 class ModelTrainer:
 
-    def random_search_cv(self, pipeline: BaseEstimator, X_train: pd.Series, y_train: pd.Series) -> Tuple[Dict[str, Any], BaseEstimator]:
+    def random_search_cv(
+        self, pipeline: BaseEstimator, X_train: pd.Series, y_train: pd.Series
+    ) -> Tuple[Dict[str, Any], BaseEstimator]:
         """
-        Perform a random search for hyperparameters using RandomizedSearchCV 
-        
+        Perform a random search for hyperparameters using RandomizedSearchCV
+
         Parameters:
             pipeline (BaseEstimator): A scikit-learn pipeline or estimator that includes a 'classifier' step.
             X_train (pd.Series): Training data features.
@@ -30,7 +32,7 @@ class ModelTrainer:
                 - A dictionary of the best hyperparameters found during the random search.
                 - The best estimator found during the random search.
         """
-        
+
         # Define parameter space for random and grid search
         param_distributions = [
             {
@@ -61,7 +63,7 @@ class ModelTrainer:
             random_state=2024,
             n_jobs=-1,
         )
-        
+
         random_search.fit(X_train, y_train)
 
         # Log metrics for each fold using cv_results_
@@ -77,13 +79,15 @@ class ModelTrainer:
         for key, value in best_params_random.items():
             mlflow.log_param(f"random_search_{key}", value)
         mlflow.log_metric("random_search_best_f1", random_search.best_score_)
-        
+
         return best_params_random, best_estimator_random
 
-    def grid_search_cv(self, random_param: Dict[str, Any], 
-        random_estimator: BaseEstimator, 
-        X_train: pd.Series, 
-        y_train: pd.Series
+    def grid_search_cv(
+        self,
+        random_param: Dict[str, Any],
+        random_estimator: BaseEstimator,
+        X_train: pd.Series,
+        y_train: pd.Series,
     ) -> BaseEstimator:
         """
         Perform a grid search of hyperparameters based on the results of a random search.
@@ -97,7 +101,7 @@ class ModelTrainer:
         Returns:
             BaseEstimator: The best estimator found during the grid search, fine-tuned with the best hyperparameters.
         """
-        
+
         # Define parameter space for grid search base on results of random search
         param_grid = {
             "classifier__n_estimators": [
@@ -148,10 +152,9 @@ class ModelTrainer:
 
         # Save the best model after GridSearchCV
         model = grid_search.best_estimator_
-        
+
         return model
 
-        
     def train(self, X_train: pd.Series, y_train: pd.Series) -> BaseEstimator:
         """
         Trains the model using RandomizedSearchCV followed by GridSearchCV for hyperparameter optimization.
@@ -163,7 +166,7 @@ class ModelTrainer:
         Returns:
             BaseEstimator: The best model (pipeline) found after hyperparameter tuning.
         """
-        
+
         # Define training pipeline
         pipeline = Pipeline(
             [
@@ -171,20 +174,16 @@ class ModelTrainer:
                 ("classifier", RandomForestClassifier(random_state=2024)),
             ]
         )
-            
+
         random_param, random_model = self.random_search_cv(pipeline, X_train, y_train)
         best_model = self.grid_search_cv(random_param, random_model, X_train, y_train)
-        
+
         # Infer signature for the model
         signature = infer_signature(X_train, best_model.predict(X_train))
-        mlflow.sklearn.log_model(
-            best_model,
-            "model",
-            signature=signature
-        )
-        
+        mlflow.sklearn.log_model(best_model, "model", signature=signature)
+
         print("Model artifact logged with MLflow")
-        
+
         return best_model
 
     def write_model(self, model: BaseEstimator, file_path: str) -> None:

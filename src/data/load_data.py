@@ -1,6 +1,7 @@
 import pandas as pd
 import mlflow
 
+
 class DataLoader:
     def __init__(self, filepath: str) -> None:
         self.filepath = filepath
@@ -20,7 +21,7 @@ class DataLoader:
             self.filepath, sep="\t", header=None, names=["label", "message"]
         )
         label_counts = message_data["label"].value_counts().to_dict()
-        
+
         # Log details about the dataset using MLflow
         with mlflow.start_run(nested=True, run_name="Data Loading"):
             mlflow.log_param("data_filepath", self.filepath)
@@ -30,4 +31,3 @@ class DataLoader:
             mlflow.log_param("label_distribution", label_counts)
 
         return message_data
-

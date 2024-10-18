@@ -3,6 +3,7 @@ import pandas as pd
 import logging
 from src.data.load_data import DataLoader
 
+
 @step
 def load_data(data_path: str) -> pd.DataFrame:
     """

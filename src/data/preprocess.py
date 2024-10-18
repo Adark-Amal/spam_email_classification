@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 
 nltk.download("stopwords")
 nltk.download("punkt")
-nltk.download('wordnet')
+nltk.download("wordnet")
 
 
 class Preprocessor:
@@ -38,7 +38,9 @@ class Preprocessor:
 
         # Remove stop words and apply stemming
         tokens = [
-            self.lemmatizer.lemmatize(word) for word in tokens if word not in self.stop_words
+            self.lemmatizer.lemmatize(word)
+            for word in tokens
+            if word not in self.stop_words
         ]
 
         return " ".join(tokens)
@@ -53,7 +55,7 @@ class Preprocessor:
         Returns:
             pd.DataFrame: Preprocessed data.
         """
-        
+
         # Apply text normalization to message column and encode labels
         message_data["cleaned_message"] = message_data["message"].apply(
             self.preprocess_text
@@ -70,35 +72,34 @@ class Preprocessor:
 
         return message_data
 
-
     def split_data(self, message_data: pd.DataFrame) -> Tuple[
         Annotated[Union[pd.DataFrame, pd.Series], "X_train"],
         Annotated[Union[pd.DataFrame, pd.Series], "X_test"],
         Annotated[Union[pd.DataFrame, pd.Series], "y_train"],
-        Annotated[Union[pd.DataFrame, pd.Series], "y_test"]
+        Annotated[Union[pd.DataFrame, pd.Series], "y_test"],
     ]:
         """
         Split data into train and test
-        
+
         Parameters:
             message_data (pd.DataFrame): DataFrame containing the dataset with a 'message' column.
-        
+
         Returns:
             X_train (pd.Series): Sample data for training model
             X_test (pd.Series): Sample data for evaluating model
             y_train (pd.Series): Sample data for training model
             y_test (pd.Series): Sample data for evaluating model
         """
-        
+
         with mlflow.start_run(nested=True, run_name="Splitting Data"):
             X_train, X_test, y_train, y_test = train_test_split(
-                    message_data["cleaned_message"],
-                    message_data["label"],
-                    test_size=0.2,
-                    random_state=2024,
-                )
+                message_data["cleaned_message"],
+                message_data["label"],
+                test_size=0.2,
+                random_state=2024,
+            )
 
             mlflow.log_param("train_data_size", len(X_train))
             mlflow.log_param("test_data_size", len(X_test))
-            
+
         return X_train, X_test, y_train, y_test
