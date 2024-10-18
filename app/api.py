@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 import joblib
 import logging
+import uvicorn
 
 
 app = FastAPI()
@@ -59,3 +60,6 @@ def predict_spam(input: MessageInput):
         raise HTTPException(
             status_code=500, detail="Prediction failed. Please try again later."
         )
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
