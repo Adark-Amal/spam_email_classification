@@ -10,21 +10,25 @@ from sklearn.model_selection import RandomizedSearchCV, GridSearchCV
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import numpy as np
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 from sklearn.base import BaseEstimator
 
 
 class ModelTrainer:
 
-    def random_search_cv(self, pipeline: BaseEstimator, X_train: pd.Series, y_train: pd.Series) -> Tuple[Dict, BaseEstimator]:
+    def random_search_cv(self, pipeline: BaseEstimator, X_train: pd.Series, y_train: pd.Series) -> Tuple[Dict[str, Any], BaseEstimator]:
         """
-        Perform random search of hyperparameters
+        Perform a random search for hyperparameters using RandomizedSearchCV 
         
         Parameters:
+            pipeline (BaseEstimator): A scikit-learn pipeline or estimator that includes a 'classifier' step.
+            X_train (pd.Series): Training data features.
+            y_train (pd.Series): Training data labels.
 
-        
         Returns:
-            Best estimator
+            Tuple[Dict[str, Any], BaseEstimator]
+                - A dictionary of the best hyperparameters found during the random search.
+                - The best estimator found during the random search.
         """
         
         # Define parameter space for random and grid search
@@ -48,44 +52,50 @@ class ModelTrainer:
         ]
 
         # Create sub runs for random
-        with mlflow.start_run(nested=True, run_name="RandomizedSearchCV"):
-            random_search = RandomizedSearchCV(
-                pipeline,
-                param_distributions,
-                n_iter=15,
-                cv=5,
-                scoring="accuracy",
-                random_state=2024,
-                n_jobs=-1,
+        random_search = RandomizedSearchCV(
+            pipeline,
+            param_distributions,
+            n_iter=15,
+            cv=5,
+            scoring="accuracy",
+            random_state=2024,
+            n_jobs=-1,
+        )
+        
+        random_search.fit(X_train, y_train)
+
+        # Log metrics for each fold using cv_results_
+        cv_results = random_search.cv_results_
+        for i in range(random_search.cv):
+            mlflow.log_metric(
+                f"f1_score_fold_{i}", cv_results[f"split{i}_test_score"].mean()
             )
-            
-            random_search.fit(X_train, y_train)
 
-            # Log metrics for each fold using cv_results_
-            cv_results = random_search.cv_results_
-            for i in range(random_search.cv):
-                mlflow.log_metric(
-                    f"f1_score_fold_{i}", cv_results[f"split{i}_test_score"].mean()
-                )
+        best_params_random = random_search.best_params_
+        best_estimator_random = random_search.best_estimator_
 
-            best_params_random = random_search.best_params_
-            best_estimator_random = random_search.best_estimator_
-
-            for key, value in best_params_random.items():
-                mlflow.log_param(f"random_search_{key}", value)
-            mlflow.log_metric("random_search_best_f1", random_search.best_score_)
+        for key, value in best_params_random.items():
+            mlflow.log_param(f"random_search_{key}", value)
+        mlflow.log_metric("random_search_best_f1", random_search.best_score_)
         
         return best_params_random, best_estimator_random
 
-    def grid_search_cv(self, random_param: Dict, random_estimator: BaseEstimator, X_train, y_train):
+    def grid_search_cv(self, random_param: Dict[str, Any], 
+        random_estimator: BaseEstimator, 
+        X_train: pd.Series, 
+        y_train: pd.Series
+    ) -> BaseEstimator:
         """
-        Perform random search of hyperparameters
-        
-        Parameters:
+        Perform a grid search of hyperparameters based on the results of a random search.
 
-        
+        Parameters:
+            random_param (Dict[str, Any]): A dictionary containing the best hyperparameters found during the random search.
+            random_estimator (BaseEstimator): The best estimator found during the random search.
+            X_train (pd.Series): The training data features.
+            y_train (pd.Series): The training data labels.
+
         Returns:
-            model: Pipeline[BaseEstimator, ClassifierMixin]
+            BaseEstimator: The best estimator found during the grid search, fine-tuned with the best hyperparameters.
         """
         
         # Define parameter space for grid search base on results of random search
@@ -114,43 +124,44 @@ class ModelTrainer:
         }
 
         # Perform GridSearchCV for fine-tuning
-        with mlflow.start_run(nested=True, run_name="GridSearchCV"):
-            grid_search = GridSearchCV(
-                random_estimator,
-                param_grid,
-                cv=10,
-                scoring="accuracy",
-                n_jobs=-1,
+        grid_search = GridSearchCV(
+            random_estimator,
+            param_grid,
+            cv=10,
+            scoring="accuracy",
+            n_jobs=-1,
+        )
+        grid_search.fit(X_train, y_train)
+
+        # Log metrics for each fold in GridSearchCV using cv_results_
+        cv_results = grid_search.cv_results_
+        for i in range(grid_search.cv):
+            mlflow.log_metric(
+                f"grid_f1_score_fold_{i}",
+                cv_results[f"split{i}_test_score"].mean(),
             )
-            grid_search.fit(X_train, y_train)
 
-            # Log metrics for each fold in GridSearchCV using cv_results_
-            cv_results = grid_search.cv_results_
-            for i in range(grid_search.cv):
-                mlflow.log_metric(
-                    f"grid_f1_score_fold_{i}",
-                    cv_results[f"split{i}_test_score"].mean(),
-                )
-
-            best_params_grid = grid_search.best_params_
-            for key, value in best_params_grid.items():
-                mlflow.log_param(f"grid_search_{key}", value)
-            mlflow.log_metric("grid_search_best_f1", grid_search.best_score_)
+        best_params_grid = grid_search.best_params_
+        for key, value in best_params_grid.items():
+            mlflow.log_param(f"grid_search_{key}", value)
+        mlflow.log_metric("grid_search_best_f1", grid_search.best_score_)
 
         # Save the best model after GridSearchCV
         model = grid_search.best_estimator_
         
         return model
-    
-    def create_pipeline(self) -> BaseEstimator:
+
+        
+    def train(self, X_train: pd.Series, y_train: pd.Series) -> BaseEstimator:
         """
-        Create model training pipeline
-        
+        Trains the model using RandomizedSearchCV followed by GridSearchCV for hyperparameter optimization.
+
         Parameters:
-            None
-        
+            X_train (pd.Series): The training data features.
+            y_train (pd.Series): The training data labels.
+
         Returns:
-            pipeline
+            BaseEstimator: The best model (pipeline) found after hyperparameter tuning.
         """
         
         # Define training pipeline
@@ -160,58 +171,29 @@ class ModelTrainer:
                 ("classifier", RandomForestClassifier(random_state=2024)),
             ]
         )
+            
+        random_param, random_model = self.random_search_cv(pipeline, X_train, y_train)
+        best_model = self.grid_search_cv(random_param, random_model, X_train, y_train)
         
-        return pipeline
+        # Infer signature for the model
+        signature = infer_signature(X_train, best_model.predict(X_train))
+        mlflow.sklearn.log_model(
+            best_model,
+            "model",
+            signature=signature
+        )
         
-    def train(self, X_train: pd.Series, y_train: pd.Series) -> BaseEstimator:
-        """
-        Trains the model using RandomizedSearchCV followed by GridSearchCV.
-
-        Parameters:
-            message_data (pd.DataFrame): DataFrame to be used for training the model.
-
-        Returns:
-            best_model: Pipeline[BaseEstimator, ClassifierMixin]
-        """
-         # End any active run before starting a new one for model logging
-        if mlflow.active_run():
-            mlflow.end_run()
-
-        # Log the final model with the signature and input example
-        with mlflow.start_run(run_name="Train Model"):
-
-            # Define training pipeline
-            pipeline = Pipeline(
-                [
-                    ("vectorize", TfidfVectorizer()),
-                    ("classifier", RandomForestClassifier(random_state=2024)),
-                ]
-            )
-            
-            random_param, random_model = self.random_search_cv(pipeline, X_train, y_train)
-            best_model = self.grid_search_cv(random_param, random_model, X_train, y_train)
-            
-            # Infer signature for the model
-            signature = infer_signature(X_train, best_model.predict(X_train))
-            #input_example = pd.DataFrame([X_train.iloc[0]], columns=["message"])
-
-            mlflow.sklearn.log_model(
-                best_model,
-                "model",
-                signature=signature,
-                #input_example=input_example,
-            )
-            
-            print("Model artifact logged with MLflow")
+        print("Model artifact logged with MLflow")
         
         return best_model
 
     def write_model(self, model: BaseEstimator, file_path: str) -> None:
         """
-        Saves the trained pipeline (features + classifier) to a file.
+        Saves the trained model pipeline (including feature processing and classifier) to a file.
 
         Parameters:
-            filepath (str): Path to save the model.
+            model (BaseEstimator): The trained model (pipeline) to be saved.
+            file_path (str): The file path where the model will be saved.
 
         Returns:
             None

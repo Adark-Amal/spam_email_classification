@@ -14,7 +14,7 @@ class FeatureBuilder(Preprocessor):
             [
                 (
                     "preprocess",
-                    FunctionTransformer(self.preprocess_text_batch, validate=False),
+                    FunctionTransformer(self.preprocess_text, validate=False),
                 ),
                 ("tfidf", TfidfVectorizer()),
             ]

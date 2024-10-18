@@ -5,18 +5,19 @@ import mlflow
 from typing_extensions import Annotated
 from typing import Tuple, Union
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer
+from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 
 nltk.download("stopwords")
 nltk.download("punkt")
+nltk.download('wordnet')
 
 
 class Preprocessor:
 
     def __init__(self) -> None:
         self.stop_words = set(stopwords.words("english"))
-        self.stemmer = PorterStemmer()
+        self.lemmatizer = WordNetLemmatizer()
 
     def preprocess_text(self, text: str) -> str:
         """
@@ -37,7 +38,7 @@ class Preprocessor:
 
         # Remove stop words and apply stemming
         tokens = [
-            self.stemmer.stem(word) for word in tokens if word not in self.stop_words
+            self.lemmatizer.lemmatize(word) for word in tokens if word not in self.stop_words
         ]
 
         return " ".join(tokens)
@@ -47,32 +48,27 @@ class Preprocessor:
         Preprocess an entire dataframe, applying text preprocessing to each message.
 
         Parameters:
-            message_data (pd.DataFrame): Original data
+            message_data (pd.DataFrame): DataFrame containing the dataset with a 'message' column.
 
         Returns:
             pd.DataFrame: Preprocessed data.
         """
         
-        try:
-            #message_data["cleaned_message"] = message_data["message"].apply(
-            #    self.preprocess_text
-            #)
-            #message_data.drop(columns=["message"], inplace=True)
-            message_data["label"] = message_data.label.map({"ham": 0, "spam": 1})
+        # Apply text normalization to message column and encode labels
+        message_data["cleaned_message"] = message_data["message"].apply(
+            self.preprocess_text
+        )
+        message_data.drop(columns=["message"], inplace=True)
+        message_data["label"] = message_data.label.map({"ham": 0, "spam": 1})
 
-            if mlflow.active_run():
-                mlflow.end_run()
+        # Log preprocessing settings to MLflow
+        with mlflow.start_run(nested=True, run_name="Preprocessing Data"):
+            mlflow.log_param("preprocessing_stopwords", len(self.stop_words))
+            mlflow.log_param("preprocessing_lemmatizer", type(self.lemmatizer).__name__)
+            mlflow.log_param("num_rows_in_dataframe", len(message_data))
+            mlflow.log_param("encoded_labels", {"ham": 0, "spam": 1})
 
-            # Log the final model with a new run specifically for model logging
-            with mlflow.start_run(run_name="Preprocessing Data"):
-                # Log preprocessing settings to MLflow
-                mlflow.log_param("preprocessing_stopwords", len(self.stop_words))
-                mlflow.log_param("preprocessing_stemmer", type(self.stemmer).__name__)
-                mlflow.log_param("num_rows_in_dataframe", len(message_data))
-
-            return message_data
-        except Exception as e:
-            print(e)
+        return message_data
 
 
     def split_data(self, message_data: pd.DataFrame) -> Tuple[
@@ -88,27 +84,21 @@ class Preprocessor:
             message_data (pd.DataFrame): DataFrame containing the dataset with a 'message' column.
         
         Returns:
-            X_train
-            X_test
-            y_train
-            y_test
+            X_train (pd.Series): Sample data for training model
+            X_test (pd.Series): Sample data for evaluating model
+            y_train (pd.Series): Sample data for training model
+            y_test (pd.Series): Sample data for evaluating model
         """
         
-        if mlflow.active_run():
-            mlflow.end_run()
+        with mlflow.start_run(nested=True, run_name="Splitting Data"):
+            X_train, X_test, y_train, y_test = train_test_split(
+                    message_data["cleaned_message"],
+                    message_data["label"],
+                    test_size=0.2,
+                    random_state=2024,
+                )
 
-        try:
-            with mlflow.start_run(run_name="Splitting Data"):
-                X_train, X_test, y_train, y_test = train_test_split(
-                        message_data["message"],
-                        message_data["label"],
-                        test_size=0.2,
-                        random_state=2024,
-                    )
-
-                mlflow.log_param("train_data_size", len(X_train))
-                mlflow.log_param("test_data_size", len(X_test))
-                
-                return X_train, X_test, y_train, y_test
-        except Exception as e:
-            print(e)
+            mlflow.log_param("train_data_size", len(X_train))
+            mlflow.log_param("test_data_size", len(X_test))
+            
+        return X_train, X_test, y_train, y_test
