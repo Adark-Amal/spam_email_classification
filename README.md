@@ -7,21 +7,21 @@ This project is a comprehensive end-to-end solution for classifying SMS messages
 
 - [Project Details](#project-details)
 - [Setup Instructions](#setup-instructions)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
 - [Deployment](#deployment)
-  - [API](#api)
-      - [How to Run the API](#how-to-run-the-api)
-      - [Request Template](#request-template)
-      - [Response](#response)
-  - [Streamlit](#streamlit)
-      - [How to Run the Streamlit App](#how-to-run-the-streamlit-app)
+    - [API](#api)
+        - [How to Run the API](#how-to-run-the-api)
+        - [Request Template](#request-template)
+        - [Response](#response)
+    - [Streamlit](#streamlit)
+        - [How to Run the Streamlit App](#how-to-run-the-streamlit-app)
 - [Testing](#testing)
 - [Technologies Used](#technologies-used)
 - [Contributing](#contributing)
 - [License](#license)
 
-### Project Details<a name="pd"></a>
+## Project Details<a name="pd"></a>
 
 <details>
 <summary>Problem Statement</summary>
@@ -111,7 +111,7 @@ In practical applications, this approach is beneficial, as the cost of misclassi
 
 </details>
 
-### Setup Instructions<a name="si"></a>
+## Setup Instructions<a name="si"></a>
 
 #### Prerequisites<a name="pr"></a>
 
@@ -148,7 +148,7 @@ In practical applications, this approach is beneficial, as the cost of misclassi
    docker run -p 8000:8000 spam_classifier_app
    ```
 
-### Deployment<a name="dt"></a>
+## Deployment<a name="dt"></a>
 
 You can deploy the spam classification model using two different modes: `API` and `Streamlit`.
 
@@ -204,7 +204,7 @@ The Streamlit app allows you to interact with the model through a web interface 
 4. This will open a web interface where you can interact with.
 5. Enter a message in the text box provided and click the classify button to get the prediction (Spam or Ham).
 
-### Testing<a name="tt"></a>
+## Testing<a name="tt"></a>
 
 Unit tests are included for data loading, preprocessing, feature extraction, and model prediction. You can run tests using `pytest`:
 
@@ -212,7 +212,7 @@ Unit tests are included for data loading, preprocessing, feature extraction, and
 pytest tests/
 ```
 
-### Technologies Used<a name="tu"></a>
+## Technologies Used<a name="tu"></a>
 
 - Python
 - FastAPI
@@ -227,10 +227,10 @@ pytest tests/
 - Yellowbrick
 - NLTK
 
-### Contributing
+## Contributing
 
 Contributions are welcome! Please fork the repository and create a pull request with your changes.
 
-### License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
